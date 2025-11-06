@@ -3,6 +3,7 @@ package dev.adlin.mind.filter;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class RateLimitFilter implements Filter {
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
         scheduler.scheduleAtFixedRate(this::cleanupOldCounters, this.timeWindow, this.timeWindow, TimeUnit.SECONDS);
     }
 
@@ -56,6 +57,7 @@ public class RateLimitFilter implements Filter {
         scheduler.shutdown();
     }
 
+    @Getter
     private class RequestCounter {
         private final AtomicInteger count = new AtomicInteger(0);
         private long lastResetTime = System.currentTimeMillis();
@@ -71,10 +73,6 @@ public class RateLimitFilter implements Filter {
 
         public void increment() {
             count.incrementAndGet();
-        }
-
-        public long getLastResetTime() {
-            return lastResetTime;
         }
     }
 }

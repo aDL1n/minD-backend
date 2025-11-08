@@ -4,12 +4,11 @@ spring:
   datasource:
     url: jdbc:postgresql://192.168.0.108:5432/postgres
     username: postgres
-    password: postgres
+    password: root
   jpa:
     hibernate:
       ddl-auto: update
     open-in-view: false
 
-rate-limiter:
-  max-requests: 50
-  time-window: 60
+web:
+  allowed-frontend-origin: "http://localhost:5173"

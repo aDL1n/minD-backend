@@ -4,7 +4,6 @@ import dev.adlin.mind.ChatMessage;
 import dev.adlin.mind.repository.ChatHistoryRepository;
 import dev.adlin.mind.repository.entity.ChatMessageEntity;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -57,17 +56,12 @@ public class ChatService {
         return this.toDomain(this.chatHistory.save(entity));
     }
 
-
     public SseEmitter registerEmitter() {
         SseEmitter emitter = new SseEmitter(60000L);
         emitters.add(emitter);
 
-        emitter.onCompletion(() -> {
-            emitters.remove(emitter);
-        });
-        emitter.onTimeout(() -> {
-            emitters.remove(emitter);
-        });
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
 
         return emitter;
     }

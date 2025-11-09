@@ -2,8 +2,6 @@ package dev.adlin.mind.controller;
 
 import dev.adlin.mind.ChatMessage;
 import dev.adlin.mind.service.ChatService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +13,6 @@ import java.util.List;
 @RequestMapping("/api")
 public class ChatController {
 
-    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final ChatService chatService;
 
     public ChatController(ChatService chatService) {
@@ -55,7 +52,7 @@ public class ChatController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<Integer> getAllMessages() {
+    public ResponseEntity<Integer> getOnlineCount() {
         return ResponseEntity.ok(this.chatService.getOnlineCount());
     }
 }

@@ -1,14 +1,18 @@
 package dev.adlin.mind.service;
 
-import dev.adlin.mind.ChatMessage;
-import dev.adlin.mind.repository.ChatHistoryRepository;
-import dev.adlin.mind.repository.entity.ChatMessageEntity;
+import dev.adlin.mind.dto.ChatMessageDto;
+import dev.adlin.mind.mapper.ChatMessageMapper;
+import dev.adlin.mind.repository.ChatRepository;
+import dev.adlin.mind.entity.ChatMessageEntity;
+import io.vavr.control.Try;
 import lombok.AllArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -16,47 +20,43 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ChatService {
 
-    private final ChatHistoryRepository chatHistory;
+    private final ChatRepository repository;
+    private final ChatMessageMapper mapper;
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    public List<ChatMessage> getMessages(Integer limit) {
-        if (limit == null) throw new IllegalArgumentException("limit is null");
-
-        return this.chatHistory.findLastMessages(limit)
-                .stream().map(ChatMessageEntity::toChatMessage).collect(Collectors.toList());
+    public @NonNull List<ChatMessageDto> getMessages(final @NonNull Pageable pageable) {
+        return this.repository.findTopByOrderByTimestampDesc(pageable).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
-    public List<ChatMessage> getPrevMessages(Long beforeId, Integer limit) {
-        if (limit == null) throw new IllegalArgumentException("limit is null");
-
-        return this.chatHistory.findPrevMessages(beforeId, limit)
-                .reversed().stream().map(ChatMessageEntity::toChatMessage).collect(Collectors.toList());
+    public @NonNull List<ChatMessageDto> getPreviousMessages(final @NonNull Long beforeId, final @NonNull Pageable pageable) {
+        return this.repository.findByIdLessThanEqualOrderByIdDesc(beforeId, pageable).reversed()
+                .stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
-    public ChatMessage receiveMessage(ChatMessage message) {
-        if (message.id() != null) throw new IllegalArgumentException("message id should be null");
-        if (message.timestamp() != null) throw new IllegalArgumentException("message timestamp should be null");
-
-        ChatMessageEntity entity = new ChatMessageEntity(
+    public @NonNull Optional<ChatMessageDto> receiveMessage(final @NonNull ChatMessageDto message) {
+        final ChatMessageEntity entity = new ChatMessageEntity(
                 null,
                 message.message(),
                 System.currentTimeMillis()
         );
 
-        for (SseEmitter emitter : emitters) {
-            try {
-                emitter.send(entity);
-            } catch (IOException e) {
-                emitter.complete();
-                emitters.remove(emitter);
-            }
-        }
+        emitters.forEach(emitter ->
+                Try.run(() -> emitter.send(entity))
+                        .onFailure((_ -> {
+                            emitter.complete();
+                            emitters.remove(emitter);
+                        }))
+        );
 
-        return this.toDomain(this.chatHistory.save(entity));
+        return Optional.of(mapper.toDomain(repository.save(entity)));
     }
 
-    public SseEmitter registerEmitter() {
+    public @NonNull SseEmitter registerEmitter() {
         SseEmitter emitter = new SseEmitter(60000L);
         emitters.add(emitter);
 
@@ -67,10 +67,6 @@ public class ChatService {
     }
 
     public int getOnlineCount() {
-        return this.emitters.size();
-    }
-
-    private ChatMessage toDomain(ChatMessageEntity entity) {
-        return new ChatMessage(entity.getId(), entity.getMessage(), entity.getTimestamp());
+        return emitters.size();
     }
 }

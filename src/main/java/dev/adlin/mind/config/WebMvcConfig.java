@@ -1,29 +1,33 @@
 package dev.adlin.mind.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
+import lombok.Setter;
+import org.jspecify.annotations.NonNull;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+@Setter
+@Getter
 @Configuration
-@EnableWebMvc
-public class WebConfig implements WebMvcConfigurer {
-    @Value("${web.allowed-frontend-origin}")
+@ConfigurationProperties("web")
+public class WebMvcConfig implements WebMvcConfigurer {
+
     private String allowedFrontendOrigin;
 
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
+    public void addCorsMappings(final @NonNull CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(allowedFrontendOrigin)
+                .allowedOrigins(getAllowedFrontendOrigin())
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 
     @Override
-    public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+    public void configureAsyncSupport(final @NonNull AsyncSupportConfigurer configurer) {
         configurer.setDefaultTimeout(-1);
     }
 }

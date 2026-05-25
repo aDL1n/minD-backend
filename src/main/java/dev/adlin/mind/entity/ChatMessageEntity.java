@@ -1,18 +1,22 @@
-package dev.adlin.mind.repository.entity;
+package dev.adlin.mind.entity;
 
-import dev.adlin.mind.ChatMessage;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Table(name = "messages")
 @Entity
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "messages")
 public class ChatMessageEntity {
 
     @Id
@@ -25,8 +29,4 @@ public class ChatMessageEntity {
 
     @Column(name = "timestamp")
     private Long timestamp;
-
-    public static ChatMessage toChatMessage(ChatMessageEntity entity) {
-        return new ChatMessage(entity.getId(), entity.getMessage(), entity.getTimestamp());
-    }
 }
